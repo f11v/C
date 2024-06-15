@@ -21,9 +21,43 @@ namespace C.Controllers
         // GET: Calificaciones
         public async Task<IActionResult> Index()
         {
-            var cContext = _context.Calificaciones.Include(c => c.Materia).Include(c => c.Usuario);
-            return View(await cContext.ToListAsync());
+            var calificaciones = await _context.Calificaciones
+                .Include(c => c.Materia)
+                .Include(c => c.Usuario)
+                .ToListAsync();
+
+            // Agrupación de calificaciones por usuario, materia y semestre
+            var calificacionesAgrupadas = calificaciones
+                .GroupBy(c => new { c.UsuarioId, c.Materia.SemestreId, c.MateriaId })
+                .Select(g => new
+                {
+                    UsuarioId = g.Key.UsuarioId,
+                    SemestreId = g.Key.SemestreId,
+                    MateriaId = g.Key.MateriaId,
+                    Calificaciones = g.ToList()
+                }).ToList();
+
+            // Calcular promedio de descripción de materia y filtrar materias
+            var materiasFiltradas = calificaciones
+                .Select(c => new { Descripcion = Convert.ToDecimal(c.Materia.Descripcion) })
+                .GroupBy(c => c.Descripcion > 0.6M) // Agrupar por si la descripción es mayor a 0.6
+                .Where(g => g.Key) // Filtrar solo las materias cuya descripción es mayor a 0.6
+                .SelectMany(g => g.Select(c => c.Descripcion))
+                .ToList();
+
+            // Filtrar calificaciones cuya nota general sea mayor a 9
+            var calificacionesFiltradas = calificaciones
+                .Where(c => c.NotaGeneral > 9)
+                .ToList();
+
+            ViewBag.CalificacionesAgrupadas = calificacionesAgrupadas;
+            ViewBag.MateriasFiltradas = materiasFiltradas;
+            ViewBag.CalificacionesFiltradas = calificacionesFiltradas;
+
+            return View(calificaciones);
+
         }
+
 
         // GET: Calificaciones/Details/5
         public async Task<IActionResult> Details(int? id)
@@ -54,14 +88,43 @@ namespace C.Controllers
         }
 
         // POST: Calificaciones/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("CalificacionId,Nota1,Nota2,Nota3,NotaFinal,NotaExtra,UsuarioId,MateriaId,NotaGeneral")] Calificacione calificacione)
         {
             if (ModelState.IsValid)
             {
+                // Calculo del promedio de las notas
+                calificacione.NotaFinal = (calificacione.Nota1 + calificacione.Nota2 + calificacione.Nota3) / 3;
+
+                calificacione.NotaExtra = calificacione.NotaFinal - 6;
+
+                // Obtener la descripción de la materia
+                var materia = await _context.Materias.FindAsync(calificacione.MateriaId);
+                if (materia != null)
+                {
+                    // Convertir la descripción a decimal
+                    if (decimal.TryParse(materia.Descripcion, out decimal descripcionDecimal))
+                    {
+                        // Calcular NotaGeneral
+                        calificacione.NotaGeneral = ((calificacione.Nota1 + calificacione.Nota2)/2)*(1- descripcionDecimal) + (calificacione.Nota3 * descripcionDecimal);
+                    }
+                    else
+                    {
+                        ModelState.AddModelError("", "La descripción de la materia no es un número válido.");
+                        ViewData["MateriaId"] = new SelectList(_context.Materias, "MateriaId", "MateriaId", calificacione.MateriaId);
+                        ViewData["UsuarioId"] = new SelectList(_context.Usuarios, "UsuarioId", "UsuarioId", calificacione.UsuarioId);
+                        return View(calificacione);
+                    }
+                }
+                else
+                {
+                    ModelState.AddModelError("", "La materia no existe.");
+                    ViewData["MateriaId"] = new SelectList(_context.Materias, "MateriaId", "MateriaId", calificacione.MateriaId);
+                    ViewData["UsuarioId"] = new SelectList(_context.Usuarios, "UsuarioId", "UsuarioId", calificacione.UsuarioId);
+                    return View(calificacione);
+                }
+
                 _context.Add(calificacione);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
@@ -90,8 +153,6 @@ namespace C.Controllers
         }
 
         // POST: Calificaciones/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, [Bind("CalificacionId,Nota1,Nota2,Nota3,NotaFinal,NotaExtra,UsuarioId,MateriaId,NotaGeneral")] Calificacione calificacione)
@@ -105,6 +166,37 @@ namespace C.Controllers
             {
                 try
                 {
+                    // Calculo del promedio de las notas
+                    calificacione.NotaFinal = (calificacione.Nota1 + calificacione.Nota2 + calificacione.Nota3) / 3;
+
+                    calificacione.NotaExtra = calificacione.NotaFinal - 6;
+
+                    // Obtener la descripción de la materia
+                    var materia = await _context.Materias.FindAsync(calificacione.MateriaId);
+                    if (materia != null)
+                    {
+                        // Convertir la descripción a decimal
+                        if (decimal.TryParse(materia.Descripcion, out decimal descripcionDecimal))
+                        {
+                            // Calcular NotaGeneral
+                            calificacione.NotaGeneral = calificacione.NotaFinal * descripcionDecimal;
+                        }
+                        else
+                        {
+                            ModelState.AddModelError("", "La descripción de la materia no es un número válido.");
+                            ViewData["MateriaId"] = new SelectList(_context.Materias, "MateriaId", "MateriaId", calificacione.MateriaId);
+                            ViewData["UsuarioId"] = new SelectList(_context.Usuarios, "UsuarioId", "UsuarioId", calificacione.UsuarioId);
+                            return View(calificacione);
+                        }
+                    }
+                    else
+                    {
+                        ModelState.AddModelError("", "La materia no existe.");
+                        ViewData["MateriaId"] = new SelectList(_context.Materias, "MateriaId", "MateriaId", calificacione.MateriaId);
+                        ViewData["UsuarioId"] = new SelectList(_context.Usuarios, "UsuarioId", "UsuarioId", calificacione.UsuarioId);
+                        return View(calificacione);
+                    }
+
                     _context.Update(calificacione);
                     await _context.SaveChangesAsync();
                 }
@@ -165,5 +257,7 @@ namespace C.Controllers
         {
             return _context.Calificaciones.Any(e => e.CalificacionId == id);
         }
+
+        public async Task<IActionResult> AgruparCalificacionesPorSemestre(int usuarioId) { var calificacionesUsuario = await _context.Calificaciones.Include(c => c.Materia).Include(c => c.Usuario).Where(c => c.UsuarioId == usuarioId).ToListAsync(); var calificacionesAgrupadas = calificacionesUsuario.GroupBy(c => c.Materia.SemestreId).Select(g => new { SemestreId = g.Key, Materias = g.GroupBy(c => c.MateriaId).Select(mg => new { MateriaId = mg.Key, Calificaciones = mg.ToList() }).ToList() }).ToList(); return View(calificacionesAgrupadas); }
     }
 }

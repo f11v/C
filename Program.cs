@@ -13,7 +13,18 @@ builder.Services.AddDbContext<CContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("CContext")));
 
 // Configuración de la sesión
-builder.Services.AddSession();
+builder.Services.AddSession(options =>
+{
+    options.Cookie.IsEssential = true; // asegura que la cookie de sesión sea esencial
+    options.IdleTimeout = TimeSpan.FromMinutes(30); // tiempo de expiración de la sesión
+});
+
+// Configuración de la política de autorización basada en roles
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("RequireAdminRole", policy => policy.RequireRole("Administrador"));
+    options.AddPolicy("RequireTeacherOrStudentRole", policy => policy.RequireRole("Maestro", "Estudiante"));
+});
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
@@ -24,7 +35,6 @@ var app = builder.Build();
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
@@ -33,10 +43,12 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
-app.UseAuthorization();
-
 // Habilita el uso de sesiones
 app.UseSession();
+
+// Habilita la autenticación y la autorización
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapControllerRoute(
     name: "default",
