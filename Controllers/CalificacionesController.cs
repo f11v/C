@@ -58,10 +58,12 @@ namespace C.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("CalificacionId,Nota1,Nota2,Nota3,NotaFinal,NotaExtra,UsuarioId,MateriaId")] Calificacione calificacione)
+        public async Task<IActionResult> Create([Bind("CalificacionId,Nota1,Nota2,Nota3,UsuarioId,MateriaId")] Calificacione calificacione)
         {
             if (ModelState.IsValid)
             {
+                calificacione.NotaFinal = (calificacione.Nota1 + calificacione.Nota2 + calificacione.Nota3) / 3;
+
                 _context.Add(calificacione);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
@@ -70,6 +72,7 @@ namespace C.Controllers
             ViewData["UsuarioId"] = new SelectList(_context.Usuarios, "UsuarioId", "UsuarioId", calificacione.UsuarioId);
             return View(calificacione);
         }
+
 
         // GET: Calificaciones/Edit/5
         public async Task<IActionResult> Edit(int? id)
@@ -94,7 +97,7 @@ namespace C.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("CalificacionId,Nota1,Nota2,Nota3,NotaFinal,NotaExtra,UsuarioId,MateriaId")] Calificacione calificacione)
+        public async Task<IActionResult> Edit(int id, [Bind("CalificacionId,Nota1,Nota2,Nota3,UsuarioId,MateriaId")] Calificacione calificacione)
         {
             if (id != calificacione.CalificacionId)
             {
@@ -105,6 +108,8 @@ namespace C.Controllers
             {
                 try
                 {
+                    calificacione.NotaFinal = (calificacione.Nota1 + calificacione.Nota2 + calificacione.Nota3) / 3;
+
                     _context.Update(calificacione);
                     await _context.SaveChangesAsync();
                 }
