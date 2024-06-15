@@ -46,6 +46,7 @@ public partial class CContext : DbContext
             entity.Property(e => e.NotaFinal)
                 .HasComputedColumnSql("((([Nota1]+[Nota2])+[Nota3])/(3))", true)
                 .HasColumnType("decimal(10, 6)");
+            entity.Property(e => e.NotaGeneral).HasColumnType("decimal(4, 2)");
             entity.Property(e => e.UsuarioId).HasColumnName("UsuarioID");
 
             entity.HasOne(d => d.Materia).WithMany(p => p.Calificaciones)
@@ -101,6 +102,7 @@ public partial class CContext : DbContext
             entity.Property(e => e.Contraseña).HasMaxLength(100);
             entity.Property(e => e.Correo).HasMaxLength(100);
             entity.Property(e => e.Nombre).HasMaxLength(50);
+            entity.Property(e => e.Promedio).HasColumnType("decimal(4, 2)");
             entity.Property(e => e.RolId).HasColumnName("RolID");
 
             entity.HasOne(d => d.Rol).WithMany(p => p.Usuarios)

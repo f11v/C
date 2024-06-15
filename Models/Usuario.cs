@@ -21,6 +21,8 @@ public partial class Usuario
 
     public int? RolId { get; set; }
 
+    public decimal? Promedio { get; set; }
+
     public virtual ICollection<Calificacione> Calificaciones { get; set; } = new List<Calificacione>();
 
     public virtual Role? Rol { get; set; }

@@ -56,7 +56,7 @@ namespace C.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("UsuarioId,Nombre,Apellido,Cedula,Correo,Contraseña,Edad,RolId")] Usuario usuario)
+        public async Task<IActionResult> Create([Bind("UsuarioId,Nombre,Apellido,Cedula,Correo,Contraseña,Edad,RolId,Promedio")] Usuario usuario)
         {
             if (ModelState.IsValid)
             {
@@ -90,7 +90,7 @@ namespace C.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("UsuarioId,Nombre,Apellido,Cedula,Correo,Contraseña,Edad,RolId")] Usuario usuario)
+        public async Task<IActionResult> Edit(int id, [Bind("UsuarioId,Nombre,Apellido,Cedula,Correo,Contraseña,Edad,RolId,Promedio")] Usuario usuario)
         {
             if (id != usuario.UsuarioId)
             {

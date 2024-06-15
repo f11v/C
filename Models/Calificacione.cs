@@ -21,6 +21,8 @@ public partial class Calificacione
 
     public int? MateriaId { get; set; }
 
+    public decimal? NotaGeneral { get; set; }
+
     public virtual Materia? Materia { get; set; }
 
     public virtual Usuario? Usuario { get; set; }
