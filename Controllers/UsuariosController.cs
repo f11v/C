@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using C.Models;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace C.Controllers
 {
@@ -159,5 +160,52 @@ namespace C.Controllers
         {
             return _context.Usuarios.Any(e => e.UsuarioId == id);
         }
+
+        public IActionResult Login()
+        {
+            ViewBag.Roles = new SelectList(_context.Roles, "RolId", "NombreRol"); // Ajustar el texto del SelectList según el campo correcto del rol
+            return View();
+        }
+
+        // POST: Usuarios/Login
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Login(string Correo, string Contraseña, int RolId)
+        {
+            if (string.IsNullOrEmpty(Correo) || string.IsNullOrEmpty(Contraseña) || RolId == 0)
+            {
+                ViewBag.ErrorMessage = "El correo, la contraseña y el rol son requeridos.";
+                ViewBag.Roles = new SelectList(_context.Roles, "RolId", "NombreRol");
+                return View();
+            }
+
+            var usuario = await _context.Usuarios
+                .Include(u => u.Rol)
+                .FirstOrDefaultAsync(u => u.Correo == Correo && u.Contraseña == Contraseña && u.RolId == RolId);
+
+            if (usuario == null)
+            {
+                ViewBag.ErrorMessage = "Correo, contraseña o rol incorrectos.";
+                ViewBag.Roles = new SelectList(_context.Roles, "RolId", "NombreRol");
+                return View();
+            }
+
+            HttpContext.Session.SetString("IsLoggedIn", "true");
+            HttpContext.Session.SetString("UserRole", usuario.Rol.NombreRol); // Guardar el rol en la sesión
+
+            // Redireccionar según el rol
+            switch (usuario.Rol.NombreRol)
+            {
+                case "Administrador":
+                    return RedirectToAction("Index", "Calificaciones"); // Asegúrate de que el nombre del controlador y la acción sean correctos
+                case "Maestro":
+                    return RedirectToAction("Index", "Usuarios");
+                case "Estudiante":
+                    return RedirectToAction("Index", "Usuarios");
+                default:
+                    return RedirectToAction("Index", "Home");
+            }
+        }
+
     }
 }
