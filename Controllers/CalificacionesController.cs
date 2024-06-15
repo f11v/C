@@ -21,8 +21,10 @@ namespace C.Controllers
         // GET: Calificaciones
         public async Task<IActionResult> Index()
         {
+            // Obtener todas las calificaciones incluyendo las relaciones necesarias
             var calificaciones = await _context.Calificaciones
                 .Include(c => c.Materia)
+                    .ThenInclude(m => m.Semestre) // Incluir la relación con Semestre de Materia
                 .Include(c => c.Usuario)
                 .ToListAsync();
 
@@ -46,17 +48,54 @@ namespace C.Controllers
                 .ToList();
 
             // Filtrar calificaciones cuya nota general sea mayor a 9
-            var calificacionesFiltradas = calificaciones
+            var calificacionesFiltradasMayorANueve = calificaciones
                 .Where(c => c.NotaGeneral > 9)
                 .ToList();
 
+            // Filtrar las calificaciones por los semestres del año 2010 al 2015 y NotaGeneral hasta 6
+            var calificacionesFiltradasPorAnio = calificaciones
+                .Where(c => c.Materia.Semestre.Año >= 2010 && c.Materia.Semestre.Año <= 2015 && c.NotaGeneral <= 6)
+                .OrderBy(c => c.NotaGeneral)
+                .ToList();
+
+            // Agrupar y organizar las calificaciones por año de semestre y estudiante
+            var calificacionesAgrupadasPorAnio = calificacionesFiltradasPorAnio
+                .GroupBy(c => c.Materia.Semestre.Año)
+                .Select(g => new
+                {
+                    Año = g.Key,
+                    Estudiantes = g.Select(c => new
+                    {
+                        Estudiante = c.Usuario.Nombre,
+                        NotaGeneral = c.NotaGeneral,
+                        Materias = c.Materia.NombreMateria
+                    }).ToList(),
+                    EstudiantesBajos = g.Count(c => c.NotaGeneral <= 6)
+                })
+                .OrderBy(g => g.Año)
+                .ToList();
+
+            // Contar el número de estudiantes con calificaciones bajas por materia
+            var estudiantesBajosPorMateria = calificacionesFiltradasPorAnio
+                .GroupBy(c => c.Materia.NombreMateria)
+                .Select(g => new
+                {
+                    Materia = g.Key,
+                    EstudiantesBajos = g.Count(c => c.NotaGeneral <= 6)
+                })
+                .ToList();
+
+            // Pasar los datos a la vista
             ViewBag.CalificacionesAgrupadas = calificacionesAgrupadas;
             ViewBag.MateriasFiltradas = materiasFiltradas;
-            ViewBag.CalificacionesFiltradas = calificacionesFiltradas;
+            ViewBag.CalificacionesFiltradasMayorANueve = calificacionesFiltradasMayorANueve;
+            ViewBag.CalificacionesAgrupadasPorAnio = calificacionesAgrupadasPorAnio;
+            ViewBag.EstudiantesBajosPorMateria = estudiantesBajosPorMateria;
 
-            return View(calificaciones);
-
+            return View(calificacionesFiltradasPorAnio);
         }
+
+
 
 
         // GET: Calificaciones/Details/5

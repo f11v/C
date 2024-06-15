@@ -1,152 +1,122 @@
 ﻿@model IEnumerable<C.Models.Calificacione>
 
 @{
-
     ViewData["Title"] = "Gestión de Calificaciones";
-
 }
 
 <ul class="nav nav-tabs" id="myTab" role="tablist">
-
     <li class="nav-item">
-
         <a class="nav-link active" id="index-tab" data-toggle="tab" href="#index" role="tab" aria-controls="index" aria-selected="true">Index</a>
-
     </li>
-
-
 </ul>
 
 <div class="tab-content" id="myTabContent">
 
     <!-- Tabla para el índice de calificaciones -->
-
     <div class="tab-pane fade show active" id="index" role="tabpanel" aria-labelledby="index-tab">
-
         <h1>Index</h1>
-
         <p>
-
             <a asp-action="Create">Create New</a>
-
         </p>
 
         <table class="table">
-
             <thead>
-
                 <tr>
-
                     <th>@Html.DisplayNameFor(model => model.First().Nota1)</th>
-
                     <th>@Html.DisplayNameFor(model => model.First().Nota2)</th>
-
                     <th>@Html.DisplayNameFor(model => model.First().Nota3)-Examen</th>
-
                     <th>@Html.DisplayNameFor(model => model.First().NotaFinal)</th>
-
                     <th>@Html.DisplayNameFor(model => model.First().NotaExtra)</th>
-
                     <th>@Html.DisplayNameFor(model => model.First().NotaGeneral)</th>
-
                     <th>@Html.DisplayNameFor(model => model.First().Materia)</th>
-
                     <th>@Html.DisplayNameFor(model => model.First().Usuario)</th>
-
                     <th></th>
-
                 </tr>
-
             </thead>
-
             <tbody>
-
                 @foreach (var item in Model)
-
                 {
-
                     <tr>
-
                         <td>@Html.DisplayFor(modelItem => item.Nota1)</td>
-
                         <td>@Html.DisplayFor(modelItem => item.Nota2)</td>
-
                         <td>@Html.DisplayFor(modelItem => item.Nota3)</td>
-
                         <td>@Html.DisplayFor(modelItem => item.NotaFinal)</td>
-
                         <td>@Html.DisplayFor(modelItem => item.NotaExtra)</td>
-
                         <td>@Html.DisplayFor(modelItem => item.NotaGeneral)</td>
-
                         <td>@Html.DisplayFor(modelItem => item.Materia.NombreMateria)</td>
-
                         <td>@Html.DisplayFor(modelItem => item.Usuario.Nombre)</td>
-
                         <td>
-
                             <a asp-action="Edit" asp-route-id="@item.CalificacionId">Edit</a> |
-
                             <a asp-action="Details" asp-route-id="@item.CalificacionId">Details</a> |
-
                             <a asp-action="Delete" asp-route-id="@item.CalificacionId">Delete</a>
-
                         </td>
-
                     </tr>
-
                 }
-
             </tbody>
-
         </table>
 
         <h2>Agrupación de Calificaciones por Usuario, Materia y Semestre</h2>
-
-
         @foreach (var item in ViewBag.CalificacionesAgrupadas)
-
         {
-
             <h3>Usuario: @item.UsuarioId, Semestre: @item.SemestreId, Materia: @item.MateriaId</h3>
-
             <ul>
-
                 @foreach (var calificacion in item.Calificaciones)
-
                 {
-
                     <li>
-
                         Nota1: @calificacion.Nota1, Nota2: @calificacion.Nota2, Nota3: @calificacion.Nota3, NotaFinal: @calificacion.NotaFinal, NotaExtra: @calificacion.NotaExtra, NotaGeneral: @calificacion.NotaGeneral
+                    </li>
+                }
+            </ul>
+        }
+
+        <h2>Calificaciones con Nota General Mayor a 9</h2>
+        @foreach (var calificacion in ViewBag.CalificacionesFiltradasMayorANueve)
+        {
+            <p>Usuario: @calificacion.Usuario.Nombre, Materia: @calificacion.Materia.NombreMateria, Nota General: @calificacion.NotaGeneral</p>
+        }
+
+        <h2>Calificaciones por Año</h2>
+        @foreach (var anio in ViewBag.CalificacionesAgrupadasPorAnio)
+        {
+            <h3>Año @anio.Año</h3>
+            <ul>
+                @foreach (var estudiante in anio.Estudiantes)
+                {
+                    <li>
+                        <strong>Estudiante:</strong> @estudiante.Estudiante<br />
+                        <strong>Nota General:</strong> @estudiante.NotaGeneral<br />
+                        <strong>Materia:</strong> @estudiante.Materias
 
                     </li>
-
                 }
-
             </ul>
-
         }
 
-        <h2>Estudiantes exonerados</h2>        @foreach (var calificacion in ViewBag.CalificacionesFiltradas)
-        {
-                        <p>Usuario: @calificacion.UsuarioId, Materia: @calificacion.Materia.MateriaId, Coeficiente de Nota: @calificacion.Materia.Descripcion, Nota Final: @calificacion.NotaGeneral</p>
-        }
+        <h2>Estudiantes con Calificaciones Bajas por Materia</h2>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Materia</th>
+                    <th>Estudiantes con Calificaciones Bajas</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in ViewBag.EstudiantesBajosPorMateria)
+                {
+                    <tr>
+                        <td>@item.Materia</td>
+                        <td>@item.EstudiantesBajos</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div> <!-- Cierre de div tab-pane -->
 
-    </div>
-
-</div>
-
+</div> <!-- Cierre de div tab-content -->
 @section Scripts {
-
     <script>
-
         $(function () {
-
             $('#myTab a:first').tab('show');
-
         });
-
     </script>
-
 }
